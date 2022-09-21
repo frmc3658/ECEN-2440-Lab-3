@@ -11,41 +11,38 @@
 #define GPIO_H_
 
 //***********************************************************************************
-// Include files
-//***********************************************************************************x
+// include files
+//***********************************************************************************
 #include "msp.h"
 
 
-//**********************************************************************************************************
-// defined files
-//**********************************************************************************************************
-#define PORT_E      DIO_PORT_Even_Interruptable_Type*     // Provides access to Ports 4 and 2
-#define PORT_O      DIO_PORT_Odd_Interruptable_Type*      // Provides access to Ports 5 and 1
-#define FSM         FSM_Game_Type*                        // Provides access to Finite State Machine Struct
+//***********************************************************************************
+// data structures
+//***********************************************************************************
+
 
 typedef struct
 {
-    uint8_t CURR_STATE;
-    uint8_t MEM_LEFT;
-    uint8_t MEM_RIGHT;
+    uint8_t currentLevel;       // memory register to store the current level
+    uint8_t previousLevel;      // memory register to store the previous level
+    uint8_t leftMemory;         // memory register to store the state of the left LED
+    uint8_t rightMemory;        // memory register to store the state of the right LED
+    uint8_t leftPin;            // memory register to store current left LED output pin
+    uint8_t rightPin;           // memory register to store current right LED output pin
 }FSM_Game_Type;
 
 
-typedef enum
+typedef enum LEVELn
 {
-    GAME_OVER        = -1,
-    LEVEL0           = 0,
-    LEVEL1           = 1,
-    LEVEL2           = 2,
-    LEVEL3           = 3,
-    LEVEL4           = 4,
-    LEVEL5           = 5,
-    FINISH           = 6
+    LEVEL0           = (uint8_t)(0x01),         /*Bin: 0000 0001*/
+    LEVEL1           = (uint8_t)(0x02),         /*Bin: 0000 0010*/
+    LEVEL2           = (uint8_t)(0x04),         /*Bin: 0000 0100*/
+    LEVEL3           = (uint8_t)(0x08),         /*Bin: 0000 1000*/
+    LEVEL4           = (uint8_t)(0x10),         /*Bin: 0001 0000*/
+    LEVEL5           = (uint8_t)(0x20),         /*Bin: 0010 0000*/
+    FINISH           = (uint8_t)(0x40),         /*Bin: 0100 0000*/
+    GAME_OVER        = (uint8_t)(0x80)          /*Bin: 1000 0000*/
 }LEVELn_Type;
-
-//***********************************************************************************
-// global variables
-//***********************************************************************************
 
 
 //***********************************************************************************
@@ -58,19 +55,15 @@ void gpio_toggle_red_led(void);
 // STACKER GAME INIT FUNCTIONS
 //-----------------------------------------------------------------------------------
 
-void init_game(PORT_E ex_switch,PORT_O ob_switch,
-               PORT_E left_leds, PORT_O right_leds,
-               uint8_t ex_mask, uint8_t ob_mask,
-               uint8_t left_mask, uint8_t right_mask,
-               uint8_t flg_bit, IRQn_Type IRQ_ex, IRQn_Type IRQ_ob);
+void init_game(void);
 
-void switch_config(PORT_E ex_sw, PORT_O ob_sw, uint8_t ex_mask, uint8_t ob_mask);
+void game_config(void);
 
-void led_config(PORT_E left_leds, uint8_t left_mask,
-                PORT_O right_leds, uint8_t right_mask);
+void switch_config(void);
 
-void IRQ_config(PORT_E ex_sw, PORT_O ob_sw,
-                uint8_t flg_bit, IRQn_Type IRQ_ex, IRQn_Type IRQ_ob);
+void led_config(void);
+
+void IRQ_config(void);
 
 
 //----------------------------------------------------------------------------------
@@ -80,39 +73,17 @@ void IRQ_config(PORT_E ex_sw, PORT_O ob_sw,
 void stacker_game(void);
 
 
-void config_leds(PORT_E left_leds_port, uint16_t left_leds_mask,
-                 PORT_O right_leds_port, uint16_t right_leds_mask,
-                 uint16_t turn_off);
+void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_time);
 
-
-
-void alternate_LEDs(PORT_E led_port, uint16_t led_pin,
-                    FSM state_machine, uint32_t delay_time);
-
-void change_level(PORT_E left_led, uint16_t left_pin,
-                  PORT_O right_led, uint16_t right_pin,
-                  int* memory_a, int* memory_b,
-                  uint32_t delay_time);
-
-
-void led_selector(PORT_E left_led, uint16_t left_pin,
-                  PORT_O right_led, uint16_t right_pin,
-                  int* memory_a, int* memory_b);
-
+void change_level(LEVELn_Type next_level, uint8_t left_pin, uint8_t right_pin);
 
 
 void delay(uint32_t delay_time);
 
+void start(void);
 
-void reset(PORT_E left_leds, PORT_O right_leds, uint8_t reset);
+void reset(void);
 
-
-//----------------------------------------------------------------------------------
-// IRQ Handlers
-//-----------------------------------------------------------------------------------
-
-void PORT1_IRQHandler(void);
-
-void PORT4_IRQHandler(void);
+void game_over(void);
 
 #endif /* GPIO_H_ */

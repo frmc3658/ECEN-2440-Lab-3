@@ -1,9 +1,5 @@
 #include "msp.h"
-#include "gpio.c"
-
-
-#define IRQn38
-#define IQRn35
+#include "gpio.h"
 
 
 /**
@@ -21,7 +17,8 @@ void main(void)
     __NVIC_DisableIRQ(PORT1_IRQn);
 
 
-    init_game(P4, P1, P2, P5, EXT_SW, OB_SW, LLEDS, RLEDS, BIT1, PORT4_IRQn, PORT1_IRQn);
+
+    init_game();
 
 
     while(1)
