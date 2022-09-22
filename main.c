@@ -16,14 +16,11 @@ void main(void)
     __NVIC_DisableIRQ(PORT4_IRQn);
     __NVIC_DisableIRQ(PORT1_IRQn);
 
-
-
     init_game();
-
 
     while(1)
     {
-
+        stacker_game();
     }
 }
 

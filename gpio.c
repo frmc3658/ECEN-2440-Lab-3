@@ -60,18 +60,12 @@
 //******************************************
 // static variables
 //******************************************
-static FSM_Game_Type* GAME;
+static FSM_Game_Type GAME;
 
 
 //******************************************
 // function definitions
 //******************************************
-
-void gpio_toggle_red_led(void)
-{
-    P1->DIR |= BIT0;        // P1.0 set as output
-    P1->OUT ^= BIT0;        // Blink the P1.0 LED
-}
 
 
 //----------------------------------------------------------------------------------
@@ -88,19 +82,19 @@ void init_game(void)
 
 void game_config(void)
 {
-    GAME->currentLevel = LEVEL0;
-    GAME->previousLevel = CLEAR;
-    GAME->leftMemory = CLEAR;
-    GAME->rightMemory = CLEAR;
-    GAME->leftPin = CLEAR;
-    GAME->rightPin = CLEAR;
+    GAME.currentLevel = LEVEL0;
+    GAME.previousLevel = CLEAR;
+    GAME.leftMemory = CLEAR;
+    GAME.rightMemory = CLEAR;
+    GAME.leftPin = CLEAR;
+    GAME.rightPin = CLEAR;
 }
 
 void switch_config(void)
 {
-    P4->DIR = ~EXT_SW_MASK;      //Set P4.4 and P4.5 as inputs (1100 1111)
-    P4->REN = EXT_SW_MASK;       //Enable pullup/pulldown resistor for input pints (0011 0000)
-    P4->OUT = EXT_SW_MASK;       //Resistor is set to pullup for input pins (0011 0000)
+    P4->DIR = ~EXT_SW_MASK;     //Set P4.4 and P4.5 as inputs (1100 1111)
+    P4->REN = EXT_SW_MASK;      //Enable pullup/pulldown resistor for input pints (0011 0000)
+    P4->OUT = EXT_SW_MASK;      //Resistor is set to pullup for input pins (0011 0000)
 
     P1->DIR = ~OB_SW_MASK;      //Set P1.1 and P1.4 as inputs
     P1->REN = OB_SW_MASK;       //Enable PU/PD
@@ -111,25 +105,25 @@ void led_config(void)
 {
 
     P2->DIR = LLEDS;    // Set P2.7 - P2.3 as output
-    P2->OUT = LEDS_OFF;  // Turn off LEDs
+    P2->OUT = LEDS_OFF; // Turn off LEDs
     P5->DIR = RLEDS;    // Set P5.7, P5.6, P5.2, P5.1, & P5.0 as outputs
-    P5->OUT = LEDS_OFF;  // Turn off LEDs
+    P5->OUT = LEDS_OFF; // Turn off LEDs
 }
 
 
 void IRQ_config(void)
 {
     //Clear Flag
-    P4->IFG &= ~BIT1;
-    P1->IFG &= ~BIT1;
+    P4->IFG = CLEAR;
+    P1->IFG = CLEAR;
 
     //Interrupt edge selector set for positive edge
-    P4->IES &= BIT1;
-    P1->IES &= BIT1;
+    P4->IES = 0b00110000;
+    P1->IES = 0b00010010;
 
     //Enable interrupt within peripheral
-    P4->IE |= EXT_SW_MASK;       // external switches
-    P1->IE |= OB_SW_MASK;        // onboard switches
+    P4->IE = EXT_SW_MASK;       // external switches
+    P1->IE = OB_SW_MASK;        // onboard switches
 
     //Enable IRQ
     __NVIC_EnableIRQ(PORT4_IRQn);
@@ -146,38 +140,56 @@ void IRQ_config(void)
 
 void stacker_game(void)
 {
+    if(GAME.currentLevel > LEVEL0)
+    {
+        uint8_t leftLED = GAME.leftPin;
+        uint8_t rightLED = GAME.rightPin;
+        uint32_t delay = GAME.delay;
 
+        alternate_LEDs(leftLED, rightLED, delay);
+    }
 }
 
 
 void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_time)
 {
+    GAME.ledCounter = 0;
+            ;
     delay(delay_time);              // delay LED signal
 
     P2->OUT |= left_led_pin;        // turn on left LED
-    GAME->leftMemory = P2->OUT;     // dave left LED state
+    GAME.leftMemory = P2->OUT;     // save left LED state
+    GAME.ledCounter++;
 
     delay(delay_time);              // keep left LED on for set time
 
     P2->OUT ^= left_led_pin;        // turn off left LED
-    GAME->leftMemory = P2->OUT;     // save left LED state
+    GAME.leftMemory = P2->OUT;     // save left LED state
+    GAME.ledCounter++;
+
 
     delay(delay_time);              // delay LED signal
 
     P5->OUT |= right_led_pin;       // turn on right LED
-    GAME->rightMemory = P5->OUT;    // save LED state
+    GAME.rightMemory = P5->OUT;    // save LED state
+    GAME.ledCounter++;
+
 
     delay(delay_time);              // keep right LED on for set time
 
     P5->OUT ^= right_led_pin;       // turn off right LED
-    GAME->rightMemory = P5->OUT;    // save right LED state
+    GAME.rightMemory = P5->OUT;    // save right LED state
+    GAME.ledCounter++;
 }
 
-void change_level(LEVELn_Type next_level, uint8_t left_pin, uint8_t right_pin)
+void change_level(LEVELn_Type next_level, LEVELn_Type previous_level,
+                  uint8_t left_pin, uint8_t right_pin, uint32_t delay)
 {
-    GAME->currentLevel = next_level;
-    GAME->leftPin =  left_pin;
-    GAME->rightPin = right_pin;
+    GAME.currentLevel = next_level;
+    GAME.previousLevel = previous_level;
+    GAME.leftPin =  left_pin;
+    GAME.rightPin = right_pin;
+    GAME.delay = delay;
 }
 
 
@@ -190,26 +202,21 @@ void delay(uint32_t delay_time)
 }
 
 
-void start(void)
-{
-    // start functionality
-}
-
-
 void reset(void)
 {
     // clear Game memory registers
-    GAME->previousLevel = CLEAR;
-    GAME->leftMemory = CLEAR;
-    GAME->rightMemory = CLEAR;
-    GAME->leftPin = CLEAR;
-    GAME->rightPin = CLEAR;
+    GAME.previousLevel = CLEAR;
+    GAME.leftMemory = CLEAR;
+    GAME.rightMemory = CLEAR;
+    GAME.leftPin = CLEAR;
+    GAME.rightPin = CLEAR;
+    GAME.delay = LVL1_DELAY;
 }
 
 
 void game_over(void)
 {
-
+    // will program later
 }
 
 //----------------------------------------------------------------------------------
@@ -223,22 +230,25 @@ void PORT1_IRQHandler(void)
     if(START)
     {
         // if game not started
-        if(GAME->currentLevel == LEVEL0)
+        if(GAME.currentLevel == LEVEL0)
         {
             // GOTO: level 1
-            change_level(LEVEL1, BIT3, BIT2);
+            change_level(LEVEL1, LEVEL0, BIT3, BIT2, LVL1_DELAY);
         }
+
+        // lower flag
+        P1->IFG &= ~BIT1;
     }
 
     // stop button interrupt source
     if(STOP)
     {
         // GOTO: level 0 (off)
-        change_level(LEVEL0, LEDS_OFF, LEDS_OFF);
-    }
+        change_level(LEVEL0, LEVEL0, LEDS_OFF, LEDS_OFF, LVL1_DELAY);
 
-    // lower flag
-    P1->IFG &= ~BIT1;
+        // lower flag
+        P1->IFG &= ~BIT4;
+    }
 
     // re-enable NVIC interrupt
    __NVIC_EnableIRQ(PORT1_IRQn);
@@ -249,45 +259,66 @@ void PORT4_IRQHandler(void)
     // select interrupt source
     if(SELECT)
     {
-        switch(GAME->currentLevel)
+        if(GAME.currentLevel > LEVEL0)
         {
-            case LEVEL1:
-                // next state
-                break;
+            switch(GAME.currentLevel)
+            {
+                case LEVEL1:
+                    change_level(LEVEL2, LEVEL1, BIT4, BIT1, LVL2_DELAY);
+                    break;
 
-            case LEVEL2:
-                // next state
-                break;
+                case LEVEL2:
+                    change_level(LEVEL3, LEVEL2, BIT5, BIT0, LVL3_DELAY);
+                    break;
 
-            case LEVEL3:
-                // next state
-                break;
+                case LEVEL3:
+                    change_level(LEVEL4, LEVEL3, BIT6, BIT6, LVL4_DELAY);
+                    break;
 
-            case LEVEL4:
-                // next state
-                break;
+                case LEVEL4:
+                    change_level(LEVEL5, LEVEL4, BIT7, BIT7, LVL5_DELAY);
+                    break;
 
-            case LEVEL5:
-                // next state
-                break;
+                case LEVEL5:
+                    change_level(FINISH, LEVEL5, LLEDS, RLEDS, SM_DELAY);
+                    break;
+            }
+
+            // if counter is even, save right LED ...
+            if((GAME.ledCounter % 2) == 0)
+            {
+                GAME.rightProgress |= GAME.rightMemory;
+                P5->OUT |= GAME.rightProgress;
+            }
+            // ... else save left LED...
+            else
+            {
+                GAME.leftProgress |= GAME.leftMemory;
+                P2->OUT |= GAME.leftProgress;
+            }
+            // ... to track progress
+
+            // lower flag
+            P4->IFG &= ~BIT5;
         }
+
     }
 
     // reset interrupt source
     if(RESET)
     {
-        if(GAME->currentLevel > LEVEL0)
+        if(GAME.currentLevel > LEVEL0)
         {
             // reset game memory registers
             reset();
 
             // GOTO: level 1
-            change_level(LEVEL1, BIT3, BIT2);
+            change_level(LEVEL1, LEVEL0, BIT3, BIT2, LVL1_DELAY);
         }
-    }
 
-    // lower flag
-    P4->OUT &= ~BIT1;
+        // lower flag
+        P4->OUT &= ~BIT1;
+    }
 
     // re-enable NVIC Interrupt
    __NVIC_EnableIRQ(PORT4_IRQn);

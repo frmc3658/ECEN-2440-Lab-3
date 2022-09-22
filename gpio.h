@@ -23,12 +23,16 @@
 
 typedef struct
 {
+    uint8_t ledCounter;
     uint8_t currentLevel;       // memory register to store the current level
     uint8_t previousLevel;      // memory register to store the previous level
     uint8_t leftMemory;         // memory register to store the state of the left LED
     uint8_t rightMemory;        // memory register to store the state of the right LED
     uint8_t leftPin;            // memory register to store current left LED output pin
     uint8_t rightPin;           // memory register to store current right LED output pin
+    uint32_t delay;             // memory register to store current delay value
+    uint8_t leftProgress;       // memory register to track all of the selected left LEDs
+    uint8_t rightProgress;      // memory register to track all of the selected right LEDs
 }FSM_Game_Type;
 
 
@@ -48,8 +52,6 @@ typedef enum LEVELn
 //***********************************************************************************
 // function prototypes
 //***********************************************************************************
-
-void gpio_toggle_red_led(void);
 
 //----------------------------------------------------------------------------------
 // STACKER GAME INIT FUNCTIONS
@@ -72,15 +74,13 @@ void IRQ_config(void);
 
 void stacker_game(void);
 
-
 void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_time);
 
-void change_level(LEVELn_Type next_level, uint8_t left_pin, uint8_t right_pin);
+void change_level(LEVELn_Type next_level, LEVELn_Type previous_level,
+                  uint8_t left_pin, uint8_t right_pin, uint32_t delay);
 
 
 void delay(uint32_t delay_time);
-
-void start(void);
 
 void reset(void);
 
