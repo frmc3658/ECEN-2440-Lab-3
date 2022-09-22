@@ -54,7 +54,7 @@
 #define LVL3_DELAY          0x1C138  // Level 3 delay timer             115,000
 #define LVL4_DELAY          0x186A0  // Level 4 delay timer             100,000
 #define LVL5_DELAY          0x15F90  // Level 5 delay timer              90,000
-#define SM_DELAY            0x02710  // SM delay timer                   10,000
+#define SM_DELAY            0x03A98  // SM delay timer                   15,000
 
 
 //******************************************
@@ -155,44 +155,41 @@ void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_
 {
     GAME.ledCounter = 0;
     uint8_t lvl_check = GAME.currentLevel;
-
-    update_OUT();
+    delay(SM_DELAY);
 
     if(GAME.currentLevel == lvl_check){
     P2->OUT |= left_led_pin;        // turn on left LED
     GAME.leftMemory = P2->OUT;     // save left LED state
     GAME.ledCounter++;
+    update_OUT();
+    delay(delay_time);              // delay LED signal
     }
 
-    update_OUT();
-    delay(delay_time);              // keep left LED on for set time
 
     if(GAME.currentLevel == lvl_check){
     P2->OUT ^= left_led_pin;        // turn off left LED
     GAME.leftMemory = P2->OUT;     // save left LED state
     GAME.ledCounter++;
-    }
-
     update_OUT();
     delay(delay_time);              // delay LED signal
+    }
 
     if(GAME.currentLevel == lvl_check){
     P5->OUT |= right_led_pin;       // turn on right LED
     GAME.rightMemory = P5->OUT;    // save LED state
     GAME.ledCounter++;
-    }
-
     update_OUT();
-    delay(delay_time);              // keep right LED on for set time
+    delay(delay_time);              // delay LED signal
+    }
 
     if(GAME.currentLevel == lvl_check){
     P5->OUT ^= right_led_pin;       // turn off right LED
     GAME.rightMemory = P5->OUT;    // save right LED state
     GAME.ledCounter++;
-    }
-
     update_OUT();
     delay(delay_time);              // delay LED signal
+    }
+
 }
 
 void change_level(LEVELn_Type next_level, LEVELn_Type previous_level,
@@ -224,12 +221,15 @@ void update_OUT(void)
 void reset(void)
 {
     // clear Game memory registers
+    GAME.currentLevel = CLEAR;
     GAME.previousLevel = CLEAR;
     GAME.leftMemory = CLEAR;
     GAME.rightMemory = CLEAR;
     GAME.leftPin = CLEAR;
     GAME.rightPin = CLEAR;
     GAME.delay = LVL1_DELAY;
+    GAME.rightProgress = CLEAR;
+    GAME.leftProgress = CLEAR;
     P5->OUT = CLEAR;
     P2->OUT = CLEAR;
 }
@@ -278,8 +278,10 @@ void PORT1_IRQHandler(void)
 void PORT4_IRQHandler(void)
 {
     // select interrupt source
+    delay(SM_DELAY);
     if(SELECT)
     {
+        delay(SM_DELAY);
         if(GAME.currentLevel > LEVEL0)
         {
             switch(GAME.currentLevel)
@@ -316,7 +318,7 @@ void PORT4_IRQHandler(void)
                 GAME.leftProgress = GAME.leftMemory;
             }
             // ... to track progress
-
+            delay(SM_DELAY);
             // lower flag
             P4->IFG &= ~BIT5;
         }
@@ -336,7 +338,7 @@ void PORT4_IRQHandler(void)
         }
 
         // lower flag
-        P4->OUT &= ~BIT1;
+        P4->IFG = CLEAR;
     }
 
     // re-enable NVIC Interrupt
