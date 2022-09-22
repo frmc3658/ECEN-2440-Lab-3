@@ -49,19 +49,19 @@
 //      NAME               HEX VALUE // DESCRIPTION                     DECIMAL
 //-----------------------------------------------------------------------------------------
 #define POLLING_DELAY       0x249F0  // Delay in polling for an input   150,000
-#define LVL1_DELAY          0x249F0  // Level 1 delay timer             150,000
-#define LVL2_DELAY          0x222E0  // Level 2 delay timer             140,000
-#define LVL3_DELAY          0X1D4C0  // Level 3 delay timer             120,000
-#define LVL4_DELAY          0X1ADB0  // Level 4 delay timer             110,000
-#define LVL5_DELAY          0X15F90  // Level 5 delay timer              90,000
-#define SM_DELAY            0X02710  // SM delay timer                   10,000
+#define LVL1_DELAY          0x222E0  // Level 1 delay timer             140,000
+#define LVL2_DELAY          0x1FBD0  // Level 2 delay timer             130,000
+#define LVL3_DELAY          0x1C138  // Level 3 delay timer             115,000
+#define LVL4_DELAY          0x186A0  // Level 4 delay timer             100,000
+#define LVL5_DELAY          0x15F90  // Level 5 delay timer              90,000
+#define SM_DELAY            0x02710  // SM delay timer                   10,000
 
 
 //******************************************
 // static variables
 //******************************************
 static FSM_Game_Type GAME;
-
+static uint8_t lvl_counter = 2;
 
 //******************************************
 // function definitions
@@ -154,34 +154,45 @@ void stacker_game(void)
 void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_time)
 {
     GAME.ledCounter = 0;
+    uint8_t lvl_check = GAME.currentLevel;
 
     update_OUT();
-    delay(delay_time);              // delay LED signal
 
+    if(GAME.currentLevel == lvl_check){
     P2->OUT |= left_led_pin;        // turn on left LED
     GAME.leftMemory = P2->OUT;     // save left LED state
     GAME.ledCounter++;
+    }
 
     update_OUT();
     delay(delay_time);              // keep left LED on for set time
 
+    if(GAME.currentLevel == lvl_check){
     P2->OUT ^= left_led_pin;        // turn off left LED
     GAME.leftMemory = P2->OUT;     // save left LED state
     GAME.ledCounter++;
+    }
 
     update_OUT();
     delay(delay_time);              // delay LED signal
 
+    if(GAME.currentLevel == lvl_check){
     P5->OUT |= right_led_pin;       // turn on right LED
     GAME.rightMemory = P5->OUT;    // save LED state
     GAME.ledCounter++;
+    }
 
     update_OUT();
     delay(delay_time);              // keep right LED on for set time
 
+    if(GAME.currentLevel == lvl_check){
     P5->OUT ^= right_led_pin;       // turn off right LED
     GAME.rightMemory = P5->OUT;    // save right LED state
     GAME.ledCounter++;
+    }
+
+    update_OUT();
+    delay(delay_time);              // delay LED signal
 }
 
 void change_level(LEVELn_Type next_level, LEVELn_Type previous_level,
