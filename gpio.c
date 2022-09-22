@@ -154,27 +154,29 @@ void stacker_game(void)
 void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_time)
 {
     GAME.ledCounter = 0;
-            ;
+
+    update_OUT();
     delay(delay_time);              // delay LED signal
 
     P2->OUT |= left_led_pin;        // turn on left LED
     GAME.leftMemory = P2->OUT;     // save left LED state
     GAME.ledCounter++;
 
+    update_OUT();
     delay(delay_time);              // keep left LED on for set time
 
     P2->OUT ^= left_led_pin;        // turn off left LED
     GAME.leftMemory = P2->OUT;     // save left LED state
     GAME.ledCounter++;
 
-
+    update_OUT();
     delay(delay_time);              // delay LED signal
 
     P5->OUT |= right_led_pin;       // turn on right LED
     GAME.rightMemory = P5->OUT;    // save LED state
     GAME.ledCounter++;
 
-
+    update_OUT();
     delay(delay_time);              // keep right LED on for set time
 
     P5->OUT ^= right_led_pin;       // turn off right LED
@@ -201,6 +203,12 @@ void delay(uint32_t delay_time)
     for(i = delay_time; i > 0; i--);
 }
 
+void update_OUT(void)
+{
+    P5->OUT |= GAME.rightProgress;
+    P2->OUT |= GAME.leftProgress;
+}
+
 
 void reset(void)
 {
@@ -211,6 +219,8 @@ void reset(void)
     GAME.leftPin = CLEAR;
     GAME.rightPin = CLEAR;
     GAME.delay = LVL1_DELAY;
+    P5->OUT = CLEAR;
+    P2->OUT = CLEAR;
 }
 
 
@@ -285,16 +295,14 @@ void PORT4_IRQHandler(void)
             }
 
             // if counter is even, save right LED ...
-            if((GAME.ledCounter % 2) == 0)
+            if(GAME.ledCounter > 2)
             {
-                GAME.rightProgress |= GAME.rightMemory;
-                P5->OUT |= GAME.rightProgress;
+                GAME.rightProgress = GAME.rightMemory;
             }
             // ... else save left LED...
             else
             {
-                GAME.leftProgress |= GAME.leftMemory;
-                P2->OUT |= GAME.leftProgress;
+                GAME.leftProgress = GAME.leftMemory;
             }
             // ... to track progress
 

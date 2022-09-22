@@ -76,6 +76,8 @@ void stacker_game(void);
 
 void alternate_LEDs(uint8_t left_led_pin, uint8_t right_led_pin, uint32_t delay_time);
 
+void update_OUT(void);
+
 void change_level(LEVELn_Type next_level, LEVELn_Type previous_level,
                   uint8_t left_pin, uint8_t right_pin, uint32_t delay);
 
